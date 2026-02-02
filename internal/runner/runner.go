@@ -672,9 +672,11 @@ func (r *Runner) worker() {
 			}
 		}
 
-		// Auto-wildcard filtering
+				// Auto-wildcard filtering (checks both A and AAAA records)
 		if r.options.AutoWildcard && r.autoWildcardDetector != nil {
-			if r.autoWildcardDetector.IsWildcard(domain, dnsData.A) {
+			// Combine A and AAAA records for wildcard check
+			allIPs := append(dnsData.A, dnsData.AAAA...)
+			if r.autoWildcardDetector.IsWildcard(domain, allIPs) {
 				continue // skip wildcard results
 			}
 		}

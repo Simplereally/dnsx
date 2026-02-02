@@ -22,6 +22,8 @@ func TestGetBaseDomain(t *testing.T) {
 		{"test.example.co.uk", "example.co.uk"},
 		{"localhost", "localhost"},
 		{"simple.com", "simple.com"},
+		{"www.google.com.", "google.com"},  // FQDN with trailing dot
+		{"api.github.com.", "github.com"},  // Another FQDN case
 	}
 
 	for _, test := range tests {

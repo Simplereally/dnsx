@@ -312,6 +312,14 @@ func (options *Options) validateOptions() {
 		if options.ShowStatistics {
 			gologger.Fatal().Msgf("stats not supported in stream mode")
 		}
+		if options.AutoWildcard {
+			gologger.Fatal().Msgf("auto-wildcard not supported in stream mode")
+		}
+	}
+
+	// Validate auto-wildcard is not used with wildcard-domain
+	if options.AutoWildcard && options.WildcardDomain != "" {
+		gologger.Fatal().Msgf("auto-wildcard can't be used with wildcard-domain")
 	}
 }
 
