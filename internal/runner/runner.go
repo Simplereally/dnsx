@@ -32,22 +32,23 @@ import (
 
 // Runner is a client for running the enumeration process.
 type Runner struct {
-	options             *Options
-	dnsx                *dnsx.DNSX
-	wgoutputworker      *sync.WaitGroup
-	wgresolveworkers    *sync.WaitGroup
-	wgwildcardworker    *sync.WaitGroup
-	workerchan          chan string
-	outputchan          chan string
-	wildcardworkerchan  chan string
-	wildcards           *mapsutil.SyncLockMap[string, struct{}]
-	wildcardscache      map[string][]string
-	wildcardscachemutex sync.Mutex
-	limiter             *ratelimit.Limiter
-	hm                  *hybrid.HybridMap
-	stats               clistats.StatisticsClient
-	tmpStdinFile        string
-	aurora              aurora.Aurora
+	options              *Options
+	dnsx                 *dnsx.DNSX
+	wgoutputworker       *sync.WaitGroup
+	wgresolveworkers     *sync.WaitGroup
+	wgwildcardworker     *sync.WaitGroup
+	workerchan           chan string
+	outputchan           chan string
+	wildcardworkerchan   chan string
+	wildcards            *mapsutil.SyncLockMap[string, struct{}]
+	wildcardscache       map[string][]string
+	wildcardscachemutex  sync.Mutex
+	limiter              *ratelimit.Limiter
+	hm                   *hybrid.HybridMap
+	stats                clistats.StatisticsClient
+	tmpStdinFile         string
+	aurora               aurora.Aurora
+	autoWildcardDetector *AutoWildcardDetector
 }
 
 func New(options *Options) (*Runner, error) {
@@ -149,7 +150,7 @@ func New(options *Options) (*Runner, error) {
 		options.NoColor = true
 	}
 
-	r := Runner{
+		r := Runner{
 		options:            options,
 		dnsx:               dnsX,
 		wgoutputworker:     &sync.WaitGroup{},
@@ -163,6 +164,11 @@ func New(options *Options) (*Runner, error) {
 		hm:                 hm,
 		stats:              stats,
 		aurora:             aurora.NewAurora(!options.NoColor),
+	}
+
+	// Initialize auto-wildcard detector if enabled
+	if options.AutoWildcard {
+		r.autoWildcardDetector = NewAutoWildcardDetector(&r, options.WildcardThreshold)
 	}
 
 	return &r, nil
@@ -663,6 +669,13 @@ func (r *Runner) worker() {
 				if _, ok := r.options.rcodes[dnsData.StatusCodeRaw]; !ok {
 					continue
 				}
+			}
+		}
+
+		// Auto-wildcard filtering
+		if r.options.AutoWildcard && r.autoWildcardDetector != nil {
+			if r.autoWildcardDetector.IsWildcard(domain, dnsData.A) {
+				continue // skip wildcard results
 			}
 		}
 
