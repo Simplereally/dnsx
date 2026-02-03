@@ -157,10 +157,12 @@ func (a *AutoWildcardDetector) GetWildcardDomains() map[string][]string {
 	a.cacheLock.RLock()
 	defer a.cacheLock.RUnlock()
 
-	result := make(map[string][]string)
+	result := make(map[string][]string, len(a.cache))
 	for k, v := range a.cache {
 		if len(v) > 0 {
-			result[k] = v
+			copied := make([]string, len(v))
+			copy(copied, v)
+			result[k] = copied
 		}
 	}
 	return result
