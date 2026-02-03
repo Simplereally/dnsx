@@ -64,13 +64,18 @@ func (a *AutoWildcardDetector) DetectWildcard(baseDomain string) []string {
 	}
 	a.cacheLock.RUnlock()
 
+	// Guard against nil runner or dnsx to prevent panics in tests or future reuse
+	if a.runner == nil || a.runner.dnsx == nil {
+		return nil
+	}
+
 	// Generate random subdomains and query them
 	wildcardIPs := make(map[string]int)
 	successfulProbes := 0
 
 	for i := 0; i < a.threshold; i++ {
 		// Respect rate limits if limiter is configured
-		if a.runner.limiter != nil {
+		if a.runner != nil && a.runner.limiter != nil {
 			a.runner.limiter.Take()
 		}
 

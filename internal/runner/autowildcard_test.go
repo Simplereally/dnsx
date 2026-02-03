@@ -22,8 +22,8 @@ func TestGetBaseDomain(t *testing.T) {
 		{"test.example.co.uk", "example.co.uk"},
 		{"localhost", "localhost"},
 		{"simple.com", "simple.com"},
-		{"www.google.com.", "google.com"},  // FQDN with trailing dot
-		{"api.github.com.", "github.com"},  // Another FQDN case
+		{"www.google.com.", "google.com"}, // FQDN with trailing dot
+		{"api.github.com.", "github.com"}, // Another FQDN case
 	}
 
 	for _, test := range tests {
@@ -63,4 +63,33 @@ func TestIsWildcardWithMatchingIP(t *testing.T) {
 	// Should not detect as wildcard when IP doesn't match
 	result = detector.IsWildcard("test.example.com", []string{"192.168.1.1"})
 	assert.False(t, result, "Should return false when IP doesn't match wildcard")
+}
+
+func TestDetectWildcardWithNilRunner(t *testing.T) {
+	// Test that DetectWildcard handles nil runner gracefully
+	detector := &AutoWildcardDetector{
+		runner:    nil, // nil runner
+		cache:     make(map[string][]string),
+		threshold: 5,
+	}
+
+	// Should return nil without panicking
+	result := detector.DetectWildcard("example.com")
+	assert.Nil(t, result, "Should return nil when runner is nil")
+}
+
+func TestDetectWildcardWithNilDnsx(t *testing.T) {
+	// Test that DetectWildcard handles nil dnsx gracefully
+	runner := &Runner{
+		dnsx: nil, // nil dnsx
+	}
+	detector := &AutoWildcardDetector{
+		runner:    runner,
+		cache:     make(map[string][]string),
+		threshold: 5,
+	}
+
+	// Should return nil without panicking
+	result := detector.DetectWildcard("example.com")
+	assert.Nil(t, result, "Should return nil when dnsx is nil")
 }
