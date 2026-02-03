@@ -150,7 +150,7 @@ func New(options *Options) (*Runner, error) {
 		options.NoColor = true
 	}
 
-		r := Runner{
+	r := Runner{
 		options:            options,
 		dnsx:               dnsX,
 		wgoutputworker:     &sync.WaitGroup{},
@@ -672,10 +672,12 @@ func (r *Runner) worker() {
 			}
 		}
 
-				// Auto-wildcard filtering (checks both A and AAAA records)
+		// Auto-wildcard filtering (checks both A and AAAA records)
 		if r.options.AutoWildcard && r.autoWildcardDetector != nil {
 			// Combine A and AAAA records for wildcard check
-			allIPs := append(dnsData.A, dnsData.AAAA...)
+			allIPs := make([]string, 0, len(dnsData.A)+len(dnsData.AAAA))
+			allIPs = append(allIPs, dnsData.A...)
+			allIPs = append(allIPs, dnsData.AAAA...)
 			if r.autoWildcardDetector.IsWildcard(domain, allIPs) {
 				continue // skip wildcard results
 			}

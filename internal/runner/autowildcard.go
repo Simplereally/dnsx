@@ -107,6 +107,11 @@ func (a *AutoWildcardDetector) DetectWildcard(baseDomain string) []string {
 
 	// Cache the result
 	a.cacheLock.Lock()
+	// Double-check in case another goroutine cached while we were probing
+	if existingIPs, ok := a.cache[baseDomain]; ok {
+		a.cacheLock.Unlock()
+		return existingIPs
+	}
 	a.cache[baseDomain] = wildcards
 	a.cacheLock.Unlock()
 
